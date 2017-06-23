@@ -1,0 +1,187 @@
+(* ::Package:: *)
+
+(* ::Title:: *)
+(*The Collatz Conjecture*)
+
+
+(* ::Abstract:: *)
+(*One of the most famous unsolved problems in mathematics.*)
+
+
+(* ::Section:: *)
+(*Definition*)
+
+
+(* ::Text:: *)
+(*The Collatz Conjecture states that repetition of a simple rule on any positive integer will eventually converge to 1. The rule is: if the number is even, divide by 2; if the number is odd, multiple by three and add 1. *)
+(**)
+(*Let's implement the function in the Wolfram Language, allowing the function to memorize it as it is called:*)
+
+
+Collatz[1]:=1;
+Collatz[n_?EvenQ]:=Collatz[n]=Collatz[n/2]
+Collatz[n_?OddQ]:=Collatz[n]=Collatz[3n+1]
+
+
+(* ::Text:: *)
+(*When called, the function will recursively evaluate until hitting 1.*)
+(**)
+(*Let's test it for arbitrarily large numbers:*)
+
+
+Collatz/@{5,222,9123,100001}
+
+
+(* ::Text:: *)
+(*Now, test it for all numbers up to a certain limit:*)
+
+
+DeleteDuplicates[Collatz/@Range[5000000]]
+
+
+(* ::Text:: *)
+(*This doesn't prove the conjecture, but it does verify it for small numbers.*)
+
+
+(* ::Section:: *)
+(*Visualization:  *)
+
+
+(* ::Text:: *)
+(*To explore the patterns of convergence, it is useful to define a new function, which lists the path every number takes to get to 1.*)
+
+
+CollatzList[1]:=1;
+CollatzList[n_ /;EvenQ[n]]:=CollatzList[n]=Flatten[{n,CollatzList[n/2]}];
+CollatzList[n_/; OddQ[n]]:=CollatzList[n]=Flatten[{n,CollatzList[3n+1]}];
+
+
+(* ::Text:: *)
+(*Start by visualizing how often the paths pass through each number.*)
+
+
+Histogram[Flatten[Map[CollatzList,Range[100000]]],{1,20,1}]
+
+
+(* ::Text:: *)
+(*The frequency on this chart is the number of integers from 1 to 100,000 that pass through the specified number before converging to 1. Every path must eventually pass through a power of two before reaching 1; this is illustrated by the histogram peaks at these numbers. The histogram nearly vanishes at every multiple of 3, indicating very few paths pass through these numbers. The distribution at the remaining integers seems more random. *)
+
+
+Histogram[Flatten[Map[CollatzList,Range[100000]]],{1,100,1}]
+
+
+(* ::Text:: *)
+(*Over a wider range, the random pattern seems to continue.*)
+
+
+(* ::Text:: *)
+(*Now, view the number of steps required by each integer to reach 1. First, convert the list of paths into a list of steps.*)
+
+
+RuleList[n_]:=Thread[Partition[CollatzList[n],2,1][[All,1]]-> Partition[CollatzList[n],2,1][[All,2]]];
+
+
+(* ::Text:: *)
+(*The length of the list of steps gives the length of the path from every integer to 1. *)
+
+
+ListPlot[Table[Length[RuleList[n]],{n,Range[2,100]}],PlotRange->All]
+
+
+(* ::Text:: *)
+(*At low integer values, the path lengths seem to scale like Sqrt[n], with a set of exceptions above the main group.*)
+
+
+ListPlot[Table[Length[RuleList[n]],{n,Range[2,1000]}],PlotRange->All]
+
+
+(* ::Text:: *)
+(*With a larger set of integers, the previous exceptions look like a wholly separate pattern, characterized by longer paths.*)
+(**)
+
+
+ListPlot[Table[Length[RuleList[n]],{n,Range[2,100000]}],PlotRange->All]
+
+
+(* ::Text:: *)
+(*As n gets very large, the lengths of the paths clearly follow a complex pattern, yet one that has a high degree of nesting.*)
+
+
+(* ::Text:: *)
+(*To further investigate the chaotic nature of the Conjecture, the data can be interpreted as a graph. To do so, the list of rules for each integer must be turned into a total list of edges.*)
+
+
+Nmax=24;totalRuleList=DeleteDuplicates[Flatten[Table[RuleList[n],{n,2,Nmax,1}]]];
+
+
+(* ::Text:: *)
+(*Now, these edges can be used to construct a graph. To make reading it easier, 1 has been marked in red.*)
+
+
+Graph[totalRuleList,GraphLayout->"LayeredDigraphEmbedding",VertexStyle->{1 -> Red},VertexSize->{1-> Large},VertexLabels->"Name"]
+
+
+(* ::Text:: *)
+(*For a sequence to converge, it must eventually hit the main "backbone" of the graph, consisting of powers of 2. The largest power of two can be calculated from the list of rules.*)
+
+
+maxPower2=Max[Select[Log[2,#]&/@totalRuleList[[All,1]],IntegerQ]];
+
+
+(* ::Text:: *)
+(*This can be used to highlight this "backbone."*)
+
+
+Graph[totalRuleList,GraphLayout->"LayeredDigraphEmbedding",VertexStyle->Table[2^n-> Red,{n,0,maxPower2}],VertexSize->Table[2^n-> Large,{n,0,maxPower2}],VertexLabels->"Name"]
+
+
+(* ::Text:: *)
+(*More complex graphs emerge as the number of nodes grows. By repeating the same commands, the graph can be made bigger. For clarity, numerical labels are omitted. *)
+
+
+Nmax=128;
+totalRuleList=DeleteDuplicates[Flatten[Table[RuleList[n],{n,2,Nmax,1}]]];
+maxPower2=Max[Select[Log[2,#]&/@totalRuleList[[All,1]],IntegerQ]];
+Graph[totalRuleList,GraphLayout->"LayeredDigraphEmbedding",VertexStyle->Table[2^n-> Red,{n,0,maxPower2}],VertexSize->Table[2^n-> Large,{n,0,maxPower2}]]
+
+
+(* ::Text:: *)
+(*The tree-like structure of the Collatz Conjecture becomes more apparent. Once more the number of nodes is increased. For clarity, the vertices are hidden.*)
+
+
+Nmax=256;
+totalRuleList=DeleteDuplicates[Flatten[Table[RuleList[n],{n,2,Nmax,1}]]];
+maxPower2=Max[Select[Log[2,#]&/@totalRuleList[[All,1]],IntegerQ]];
+Graph[totalRuleList,GraphLayout->"LayeredDigraphEmbedding",VertexSize->0]
+
+
+(* ::Text:: *)
+(*Clearly, the rules associated with the Collatz Conjecture generate a highly complex, and seemingly random structure. *)
+
+
+(* ::FurtherExplorationSection:: *)
+(*Further Explorations*)
+
+
+(* ::FurtherExploration:: *)
+(*Goldbach's conjecture*)
+
+
+(* ::FurtherExploration:: *)
+(*Brocard's problem*)
+
+
+(* ::AuthorshipSection:: *)
+(*Authorship information*)
+
+
+(* ::Authorship:: *)
+(*Marc Thomson*)
+
+
+(* ::Authorship:: *)
+(*June 21, 2017*)
+
+
+(* ::Authorship:: *)
+(*marc.thomson@colorado.edu*)
